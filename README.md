@@ -1,5 +1,4 @@
 # rough-volatility-calibrator
-# rough-volatility-calibrator
 
 Volatility models calibrated on real SPX options data — from Black-Scholes to Rough Bergomi.
 
@@ -7,7 +6,6 @@ The core idea: BS assumes constant vol. Markets don't. This project builds up fr
 baseline, through Heston, to the Rough Bergomi model (Bayer, Friz, Gatheral 2016) which
 captures the empirical roughness of volatility (H ≈ 0.1) and reproduces the short-term
 implied vol smile that classical models fail to fit.
-
 
 
 ## Why Rough Bergomi
@@ -21,7 +19,6 @@ The Rough Bergomi model encodes this directly and fits the SPX smile remarkably 
 with very few parameters.
 
 
-
 ## Stack
 
 - Python 3.10+
@@ -30,7 +27,6 @@ with very few parameters.
 ```bash
 pip install -r requirements.txt
 ```
-
 
 
 ## References
