@@ -43,7 +43,7 @@ def simulate_rough_bergomi(S: float, T: float, r: float,
 
     for i in range(n_steps):
         S_paths[:, i+1] = S_paths[:, i] * np.exp(
-            (r - 0.5 * v[:, i]) * dt + np.sqrt(v[:, i * dt) * dW1[:, i]
+            (r - 0.5 * v[:, i]) * dt + np.sqrt(v[:, i] * dt) * dW1[:, i]
         )
 
     return S_paths, v
