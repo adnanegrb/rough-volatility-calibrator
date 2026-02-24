@@ -8,7 +8,7 @@ baseline, through Heston, to the Rough Bergomi model (Bayer, Friz, Gatheral 2016
 captures the empirical roughness of volatility (H ≈ 0.1) and reproduces the short-term
 implied vol smile that classical models fail to fit.
 
----
+
 
 ## Why Rough Bergomi
 
@@ -20,7 +20,7 @@ fractional Brownian motion with Hurst exponent H ≈ 0.1, far rougher than stand
 The Rough Bergomi model encodes this directly and fits the SPX smile remarkably well
 with very few parameters.
 
----
+
 
 ## Stack
 
@@ -31,7 +31,7 @@ with very few parameters.
 pip install -r requirements.txt
 ```
 
----
+
 
 ## References
 
