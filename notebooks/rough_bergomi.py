@@ -1,0 +1,149 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Rough Bergomi vs Heston vs Black-Scholes\n",
+    "\n",
+    "Final comparison — three models, one market smile.\n",
+    "This is what the whole project builds toward."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!git clone https://github.com/adnanegrb/rough-volatility-calibrator\n",
+    "import os\n",
+    "os.chdir('rough-volatility-calibrator')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import seaborn as sns\n",
+    "import matplotlib.pyplot as plt\n",
+    "import yfinance as yf\n",
+    "from datetime import datetime\n",
+    "from models.black_scholes import implied_vol\n",
+    "from models.heston import heston_mc\n",
+    "from models.rough_bergomi import rbergomi_smile\n",
+    "\n",
+    "sns.set_theme(style='darkgrid', palette='deep')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Market data\n",
+    "spx = yf.Ticker('^SPX')\n",
+    "S   = spx.history(period='1d')['Close'].iloc[-1]\n",
+    "\n",
+    "expiry = spx.options[4]\n",
+    "chain  = spx.option_chain(expiry)\n",
+    "calls  = chain.calls\n",
+    "\n",
+    "calls = calls[(calls['strike'] > S * 0.85) & (calls['strike'] < S * 1.15)]\n",
+    "calls = calls[calls['lastPrice'] > 0.5]\n",
+    "calls = calls[calls['openInterest'] > 1000].reset_index(drop=True)\n",
+    "\n",
+    "T = (datetime.strptime(expiry, '%Y-%m-%d') - datetime.today()).days / 365\n",
+    "r = 0.05\n",
+    "\n",
+    "strikes       = calls['strike'].values\n",
+    "market_prices = calls['lastPrice'].values\n",
+    "\n",
+    "market_ivols = np.array([implied_vol(p, S, K, T, r) for p, K in zip(market_prices, strikes)])\n",
+    "mask = ~np.isnan(market_ivols)\n",
+    "strikes, market_ivols = strikes[mask], market_ivols[mask]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# BS flat vol (ATM)\n",
+    "atm_vol = market_ivols[np.argmin(np.abs(strikes - S))]\n",
+    "bs_ivols = np.full(len(strikes), atm_vol)\n",
+    "\n",
+    "# Heston smile\n",
+    "v0, kappa, theta, xi, rho_h = 0.04, 2.0, 0.04, 0.3, -0.7\n",
+    "heston_ivols = []\n",
+    "for K in strikes:\n",
+    "    price = heston_mc(S, K, T, r, v0, kappa, theta, xi, rho_h)\n",
+    "    heston_ivols.append(implied_vol(price, S, K, T, r))\n",
+    "heston_ivols = np.array(heston_ivols)\n",
+    "\n",
+    "# Rough Bergomi smile\n",
+    "H, eta, rho_rb = 0.1, 1.9, -0.9\n",
+    "rb_ivols = rbergomi_smile(S, strikes, T, r, H, eta, rho_rb)\n",
+    "\n",
+    "print('Done.')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Final plot\n",
+    "fig, ax = plt.subplots(figsize=(12, 6))\n",
+    "\n",
+    "ax.plot(strikes, market_ivols * 100, 'o-',  linewidth=2.5, label='Market',         color=sns.color_palette()[0])\n",
+    "ax.plot(strikes, rb_ivols * 100,     's-',  linewidth=2.5, label='Rough Bergomi',   color=sns.color_palette()[1])\n",
+    "ax.plot(strikes, heston_ivols * 100, '^--', linewidth=2,   label='Heston',          color=sns.color_palette()[2])\n",
+    "ax.plot(strikes, bs_ivols * 100,     ':',   linewidth=1.5, label='Black-Scholes',   color=sns.color_palette()[3])\n",
+    "\n",
+    "ax.axvline(x=S, color='gray', linestyle=':', alpha=0.5, label='ATM spot')\n",
+    "\n",
+    "ax.set_xlabel('Strike', fontsize=13)\n",
+    "ax.set_ylabel('Implied Volatility (%)', fontsize=13)\n",
+    "ax.set_title(f'Volatility Smile — BS vs Heston vs Rough Bergomi  |  SPX  |  Expiry {expiry}', fontsize=14)\n",
+    "ax.legend(fontsize=11)\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "os.makedirs('results', exist_ok=True)\n",
+    "plt.savefig('results/final_comparison.png', dpi=150)\n",
+    "\n",
+    "from google.colab import files\n",
+    "files.download('results/final_comparison.png')\n",
+    "\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Rough Bergomi captures the skew that both BS and Heston miss.\n",
+    "H ≈ 0.1 encodes the empirical roughness of realized volatility on SPX — Gatheral, Jaisson & Rosenbaum (2018)."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "name": "python",
+   "version": "3.10.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
