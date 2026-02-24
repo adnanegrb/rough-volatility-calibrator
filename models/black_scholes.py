@@ -1,14 +1,3 @@
-"""
-Black-Scholes Option Pricing Model:
-
-Reference: Black & Scholes (1973), Journal of Political Economy, 81:635-654
-
-This is the baseline model for the rough-volatility-calibrator project.
-We start here because every advanced model (Heston, rBergomi) is benchmarked against BS.
-
-Author: GARAB Adnane
-"""
-
 import numpy as np
 from scipy.stats import norm
 from scipy.optimize import brentq
